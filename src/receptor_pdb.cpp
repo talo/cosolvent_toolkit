@@ -495,10 +495,15 @@ void receptor_pdb::xyz_parser(string pdb_file){
                     y = stof(s.substr(38, 8));
                     z = stof(s.substr(46, 8));
                     atom_index = stoi(s.substr(4, 8));
-                    strcpy(atom_name,s.substr(11, 6).c_str());
-                    *std::remove_copy_if( s.substr(11, 6).begin(), s.substr(11, 6).end(), atom_name, (int (*)(int))std::isspace ) = 0;
-                    strcpy(resname,s.substr(16, 4).c_str());
-                    *std::remove_copy_if( s.substr(16, 4).begin(), s.substr(16, 4).end(), resname, (int (*)(int))std::isspace ) = 0;
+                    // Avoid using iterators from temporary substrings (can cause UB/segfault).
+                    std::string atom_field = s.substr(11, 6);
+                    std::string res_field = s.substr(16, 4);
+                    atom_field.erase(std::remove_if(atom_field.begin(), atom_field.end(), ::isspace), atom_field.end());
+                    res_field.erase(std::remove_if(res_field.begin(), res_field.end(), ::isspace), res_field.end());
+                    strncpy(atom_name, atom_field.c_str(), sizeof(atom_name)-1);
+                    atom_name[sizeof(atom_name)-1] = '\0';
+                    strncpy(resname, res_field.c_str(), sizeof(resname)-1);
+                    resname[sizeof(resname)-1] = '\0';
                     res_index = stoi(s.substr(22, 8));
                     txyz.push_back(x);
                     txyz.push_back(y);

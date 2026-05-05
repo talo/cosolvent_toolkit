@@ -146,7 +146,8 @@ int main(int argc, char *argv[])
         cout <<  "Can't open list of structures: " << input_name << endl;
         exit(0);
     }
-    int initial_residue;
+    int initial_residue = 1;
+    bool initial_residue_set = false;
 
     fgets(buffer, 100, input);
     int nfiles = nframes;
@@ -226,6 +227,16 @@ int main(int argc, char *argv[])
     //call methods to read topol (could be read only once
     rec_pdb->topology_parser(topol_input_string);
     rec_pdb->xyz_parser(filenames[file]);
+    if (rec_pdb->residue_id_per_atom.empty() || rec_pdb->residue_id_per_atom[0].empty()) {
+        cout << "Warning: skipping unreadable/empty frame in pass1: " << filenames[file] << endl;
+        delete rec_pdb;
+        delete cov_pdb;
+        continue;
+    }
+    if (!initial_residue_set) {
+        initial_residue = rec_pdb->residue_id_per_atom[0][0];
+        initial_residue_set = true;
+    }
     cov_pdb->topology_parser(itp_input);
     cov_pdb->xyz_parser(filenames[file],rec_pdb->total_atoms-1);
 
@@ -459,9 +470,14 @@ int main(int argc, char *argv[])
 
     rec_pdb->topology_parser(topol_input_string);
     rec_pdb->xyz_parser(filenames[file]);
+    if (rec_pdb->residue_id_per_atom.empty() || rec_pdb->residue_id_per_atom[0].empty()) {
+        cout << "Warning: skipping unreadable/empty frame in pass2: " << filenames[file] << endl;
+        delete rec_pdb;
+        delete cov_pdb;
+        continue;
+    }
 
     cov_pdb->topology_parser(itp_input);
-    initial_residue= rec_pdb->residue_id_per_atom[0][0];
 
     cov_pdb->xyz_parser(filenames[file],rec_pdb->total_atoms-1);
     if(file == 0){
@@ -991,4 +1007,3 @@ int main(int argc, char *argv[])
 cout << "Thanks for using CAT" << endl;
 
 }
-
